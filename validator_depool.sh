@@ -45,6 +45,10 @@ echo "INFO: MSIG_ADDR = ${MSIG_ADDR}"
 echo "INFO: DEPOOL_ADDR = ${DEPOOL_ADDR}"
 
 ACTIVE_ELECTION_ID_HEX=$(${UTILS_DIR}/tonos-cli run ${ELECTOR_ADDR} active_election_id {} --abi ${CONFIGS_DIR}/Elector.abi.json 2>&1 | grep "value0" | awk '{print $2}' | tr -d '"')
+if [ -z "${ACTIVE_ELECTION_ID_HEX}" ]; then
+   	echo "ERROR: failed to get active elections ID"
+        exit 1
+fi
 ACTIVE_ELECTION_ID=$(printf "%d" "${ACTIVE_ELECTION_ID_HEX}")
 echo "INFO: ACTIVE_ELECTION_ID = ${ACTIVE_ELECTION_ID}"
 
