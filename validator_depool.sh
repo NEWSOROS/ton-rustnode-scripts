@@ -180,5 +180,5 @@ fi
 
 date +"INFO: %F %T prepared for elections"
 echo "${ACTIVE_ELECTION_ID}" >"${ELECTIONS_WORK_DIR}/active-election-id-submitted"
-
+${SCRIPT_DIR}/confirm.sh
 echo "INFO: $(basename "$0") END $(date +%s) / $(date)"
