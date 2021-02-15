@@ -12,6 +12,10 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
 # shellcheck source=env.sh
 . "${SCRIPT_DIR}/env.sh"
 
+TMP_DIR=/tmp/$(basename "$0" .sh)_$$
+rm -rf "${TMP_DIR}"
+mkdir -p "${TMP_DIR}"
+
 CONTRACTS_DIR="${SRC_TOP_DIR}/ton-labs-contracts/solidity"
 TON_NODE_ROOT="${TON_WORK_DIR}"
 CONFIGS_DIR="${TON_NODE_ROOT}/configs"
@@ -21,9 +25,9 @@ WORK_DIR="${UTILS_DIR}"
 MAX_FACTOR=${MAX_FACTOR:-3}
 TONOS_CLI_SEND_ATTEMPTS="10"
 ELECTOR_ADDR="-1:3333333333333333333333333333333333333333333333333333333333333333"
-MSIG_ADDR_FILE="${CONFIGS_DIR}/${VALIDATOR_NAME}.addr"
-DEPOOL_ADDR_FILE="${CONFIGS_DIR}/depool.addr"
-TIKTOK_ADDR_FILE="${CONFIGS_DIR}/tiktok.addr"
+MSIG_ADDR_FILE="${KEYS_DIR}/${VALIDATOR_NAME}.addr"
+DEPOOL_ADDR_FILE="${KEYS_DIR}/depool.addr"
+HELPER_ADDR_FILE="${KEYS_DIR}/tiktok.addr"
 
 if [ ! -f "${MSIG_ADDR_FILE}" ]; then
     echo "ERROR: ${MSIG_ADDR_FILE} does not exist"
@@ -35,10 +39,10 @@ if [ ! -f "${DEPOOL_ADDR_FILE}" ]; then
     echo "ERROR: "${DEPOOL_ADDR_FILE}" does not exist"
     exit 1
 fi
-DEPOOL_ADDR=$(cat "${CONFIGS_DIR}/depool.addr")
+DEPOOL_ADDR=$(cat "${DEPOOL_ADDR_FILE}")
 
-if [ -f "${TIKTOK_ADDR_FILE}" ]; then
-    TIKTOK_ADDR=$(cat "${CONFIGS_DIR}/tiktok.addr")
+if [ -f "${HELPER_ADDR_FILE}" ]; then
+    HELPER_ADDR=$(cat "${HELPER_ADDR_FILE}")
 fi
 
 echo "INFO: MSIG_ADDR = ${MSIG_ADDR}"
@@ -85,8 +89,9 @@ set +eE
 ACTIVE_ELECTION_ID_FROM_DEPOOL_EVENT=$(grep "^{" "${ELECTIONS_WORK_DIR}/events.txt" | grep electionId |
     jq ".electionId" | head -1 | tr -d '"' | xargs printf "%d\n")
 echo "INFO: ACTIVE_ELECTION_ID_FROM_DEPOOL_EVENT = ${ACTIVE_ELECTION_ID_FROM_DEPOOL_EVENT}"
+
 ACTIVE_ELECTION_ID_TIME_DIFF=$(($ACTIVE_ELECTION_ID - $ACTIVE_ELECTION_ID_FROM_DEPOOL_EVENT))
-if [ $ACTIVE_ELECTION_ID_TIME_DIFF -lt 1000 ]; then #if [ "${ACTIVE_ELECTION_ID_FROM_DEPOOL_EVENT}" = "${ACTIVE_ELECTION_ID}" ]; then
+if [ $ACTIVE_ELECTION_ID_TIME_DIFF -lt 1000 ]; then
     PROXY_ADDR_FROM_DEPOOL_EVENT=$(grep "^{" "${ELECTIONS_WORK_DIR}/events.txt" | grep electionId |
         jq ".proxy" | head -1 | tr -d '"')
     echo "INFO: PROXY_ADDR_FROM_DEPOOL_EVENT = ${PROXY_ADDR_FROM_DEPOOL_EVENT}"
@@ -100,9 +105,9 @@ else
 	echo "INFO: try to ticktock"
         for i in $(seq ${TONOS_CLI_SEND_ATTEMPTS}); do
             echo "INFO: tonos-cli sendTicktock attempt #${i}..."
-            set -x "${UTILS_DIR}/tonos-cli"  
+            set -x
             if ! "${UTILS_DIR}/tonos-cli" depool --addr "${DEPOOL_ADDR}" ticktock \
-                -w "${TIKTOK_ADDR}" \
+                -w "${HELPER_ADDR}" \
                 -s "${KEYS_DIR}/tiktok.json"; then
                 echo "INFO: tonos-cli submitTransaction attempt #${i}... FAIL"
             else
@@ -136,7 +141,9 @@ if [ "${ELECTIONS_ARTEFACTS_CREATED}" = "0" ]; then
    ELECTION_START="${ACTIVE_ELECTION_ID_FROM_DEPOOL_EVENT}"
    # TODO: duration may be reduced - to be checked
    ELECTION_STOP=$((ACTIVE_ELECTION_ID_FROM_DEPOOL_EVENT + 1000 + ELECTIONS_START_BEFORE + ELECTIONS_END_BEFORE + STAKE_HELD_FOR + VALIDATORS_ELECTED_FOR))
-   ${UTILS_DIR}/console -C ${CONFIGS_DIR}/console.json -c "election-bid ${ELECTION_START} ${ELECTION_STOP}"
+
+   jq ".wallet_id = \"${PROXY_ADDR_FROM_DEPOOL_EVENT}\"" ${CONFIGS_DIR}/console.json >"${TMP_DIR}/console.json"
+   ${UTILS_DIR}/console -C ${TMP_DIR}/console.json -c "election-bid ${ELECTION_START} ${ELECTION_STOP}"
    mv validator-query.boc "${ELECTIONS_WORK_DIR}"
 
    echo "${ACTIVE_ELECTION_ID_FROM_DEPOOL_EVENT}" >"${ELECTIONS_WORK_DIR}/election-artefacts-created"
@@ -180,5 +187,6 @@ fi
 
 date +"INFO: %F %T prepared for elections"
 echo "${ACTIVE_ELECTION_ID}" >"${ELECTIONS_WORK_DIR}/active-election-id-submitted"
-${SCRIPT_DIR}/confirm.sh
+
+rm -rf "${TMP_DIR}"
 echo "INFO: $(basename "$0") END $(date +%s) / $(date)"
