@@ -7,3 +7,5 @@ export PATH="${UTILS_DIR}:$PATH"
 export TON_WORK_DIR="/var/ton-node"
 export SDK_URL="https://rustnet.ton.dev"
 export MSIG_ENABLE=yes
+export ELECTOR_TYPE=solidity
+export STAKE=1000000
