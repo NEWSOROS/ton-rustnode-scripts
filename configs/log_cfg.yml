@@ -15,7 +15,7 @@ appenders:
 
   logfile:
     kind: file
-    path: "/var/ton-node/logs/output.log"
+    path: "/ton-node/logs/output.log"
     encoder:
       pattern: "{d(%s.%f)} {l} [{h({t})}] {I}: {m}{n}"
 
@@ -23,7 +23,7 @@ appenders:
     kind: rolling_file
     encoder:
       pattern: "{d(%Y-%m-%d %H:%M:%S.%f)} {l} [{h({t})}] {I}: {m}{n}"
-    path: /var/ton-node/logs/output.log
+    path: /ton-node/logs/output.log
     policy:
       kind: compound
       trigger:
@@ -31,7 +31,7 @@ appenders:
         limit: 50 gb
       roller:
         kind: fixed_window
-        pattern: '/var/ton-node/logs/output_{}.log'
+        pattern: '/ton-node/logs/output_{}.log'
         base: 1
         count: 1
 
