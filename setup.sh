@@ -48,7 +48,7 @@ SETUP_GROUP="$(id --group)"
 BIN_DIR="${SRC_TOP_DIR}/bin"
 TOOLS_DIR="${SRC_TOP_DIR}/tools"
 
-sudo rm -rf "${TON_WORK_DIR}"
+sudo rm -rf "${TON_WORK_DIR}/*"
 
 sudo mkdir -p "${TON_WORK_DIR}"
 sudo chown "${SETUP_USER}:${SETUP_GROUP}" "${TON_WORK_DIR}"
