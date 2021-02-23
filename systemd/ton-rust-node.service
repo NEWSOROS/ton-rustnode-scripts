@@ -9,17 +9,17 @@ Type=simple
 User=USER
 Group=GROUP
 WorkingDirectory=ROOT
-ExecStart=eatmydata -- "BIN" --configs CONFIGS
+ExecStart=BIN --configs CONFIGS
 StandardOutput=file:LOG
 StandardError=file:LOG
 Restart=always
 RestartSec=3
 LimitSTACK=134217728
 LimitNOFILE=1000000
-LimitNICE=-10
-Nice=-10
-CPUSchedulingPolicy=rr
-CPUSchedulingPriority=80
+#LimitNICE=-10
+#Nice=-10
+#CPUSchedulingPolicy=rr
+#CPUSchedulingPriority=80
 
 [Install]
 WantedBy=multi-user.target
