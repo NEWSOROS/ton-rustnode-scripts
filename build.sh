@@ -44,7 +44,9 @@ echo "${NODE_BUILD_DIR}"
 
 cd "${NODE_BUILD_DIR}" && git clone --recursive "${TON_NODE_GITHUB_REPO}" ton-node
 cd "${NODE_BUILD_DIR}/ton-node" && git checkout "${TON_NODE_GITHUB_COMMIT_ID}"
-
+##### Log lavel OFF
+sed -i "s@log = \"0.4\"@log = { version = \"0.4\", features = [\"release_max_level_off\"] }@g" "${NODE_BUILD_DIR}/ton-node/Cargo.toml"
+#####
 cargo update
 cargo build --release
 
