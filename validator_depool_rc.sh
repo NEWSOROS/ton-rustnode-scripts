@@ -107,9 +107,9 @@ else
             echo "INFO: tonos-cli sendTicktock attempt #${i}..."
             set -x
             if ! "${UTILS_DIR}/tonos-cli" message "${HELPER_ADDR}" sendTransaction "{\"dest\":\"${DEPOOL_ADDR}\",\"value\":1000000000,\"bounce\":true,\"flags\":3,\"payload\":\"te6ccgEBAQEABgAACCiAmCM=\"}" \
-					--abi  "${CONFIGS_DIR}/SafeMultisigWallet.abi.json" \
-                            		--sign "${KEYS_DIR}/tiktok.json" 
-                            		--lifetime 3600 --raw --output "${TMP_DIR}/tiktok-query.boc"; then
+							--abi  "${CONFIGS_DIR}/SafeMultisigWallet.abi.json" \
+                            --sign "${KEYS_DIR}/tiktok.json" \
+                            --lifetime 3600 --raw --output "${TMP_DIR}/tiktok-query.boc"; then
                 echo "INFO: tonos-cli create message attempt #${i}... FAIL"
             else
                 if ! ${UTILS_DIR}/console -C ${CONFIGS_DIR}/console.json -c "sendmessage ${TMP_DIR}/tiktok-query.boc"; then
@@ -125,6 +125,7 @@ else
     fi
     exit 1
 fi
+
 set -eE
 
 ELECTIONS_ARTEFACTS_CREATED="0"
@@ -175,9 +176,9 @@ for i in $(seq ${TONOS_CLI_SEND_ATTEMPTS}); do
     echo "INFO: tonos-cli submitTransaction attempt #${i}..."
     set -x
     if ! "${UTILS_DIR}/tonos-cli" message "${MSIG_ADDR}"  submitTransaction "{\"dest\":\"${DEPOOL_ADDR}\",\"value\":\"1000000000\",\"bounce\":true,\"allBalance\":false,\"payload\":\"${VALIDATOR_QUERY_BOC}\"}" \
-				--abi  "${CONFIGS_DIR}/SafeMultisigWallet.abi.json" \
-                            	--sign "${KEYS_DIR}/msig.keys.json" 
-                             	--lifetime 3600 --raw --output "${TMP_DIR}/depool-query.boc"; then
+							 --abi  "${CONFIGS_DIR}/SafeMultisigWallet.abi.json" \
+                             --sign "${KEYS_DIR}/msig.keys.json" \
+                             --lifetime 3600 --raw --output "${TMP_DIR}/depool-query.boc"; then
         echo "INFO: tonos-cli create message attempt #${i}... FAIL"
     else
         if ! ${UTILS_DIR}/console -C ${CONFIGS_DIR}/console.json -c "sendmessage ${TMP_DIR}/depool-query.boc"; then
@@ -199,5 +200,5 @@ fi
 date +"INFO: %F %T prepared for elections"
 echo "${ACTIVE_ELECTION_ID}" >"${ELECTIONS_WORK_DIR}/active-election-id-submitted"
 
-rm -rf "${TMP_DIR}"
+#rm -rf "${TMP_DIR}"
 echo "INFO: $(basename "$0") END $(date +%s) / $(date)"
