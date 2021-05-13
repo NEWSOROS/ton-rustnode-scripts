@@ -106,10 +106,10 @@ else
         for i in $(seq ${TONOS_CLI_SEND_ATTEMPTS}); do
             echo "INFO: tonos-cli sendTicktock attempt #${i}..."
             set -x
-            if ! "${UTILS_DIR}/tonos-cli" message --abi  "${CONFIGS_DIR}/SafeMultisigWallet.abi.json" \
-                              --sign "${KEYS_DIR}/tiktok.json ${HELPER_ADDR}" sendTransaction \
-                                     "{\"dest\":\"${DEPOOL_ADDR}\",\"value\":1000000000,\"bounce\":true,\"flags\":3,\"payload\":\"te6ccgEBAQEABgAACCiAmCM=\"}" \
-                              --lifetime 3600 --raw --output "${TMP_DIR}/tiktok-query.boc"; then
+            if ! "${UTILS_DIR}/tonos-cli" message "${HELPER_ADDR}" sendTransaction "{\"dest\":\"${DEPOOL_ADDR}\",\"value\":1000000000,\"bounce\":true,\"flags\":3,\"payload\":\"te6ccgEBAQEABgAACCiAmCM=\"}" \
+							--abi  "${CONFIGS_DIR}/SafeMultisigWallet.abi.json" \
+                            --sign "${KEYS_DIR}/tiktok.json" 
+                            --lifetime 3600 --raw --output "${TMP_DIR}/tiktok-query.boc"; then
                 echo "INFO: tonos-cli create message attempt #${i}... FAIL"
             else
                 if ! ${UTILS_DIR}/console -C ${CONFIGS_DIR}/console.json -c "sendmessage ${TMP_DIR}/tiktok-query.boc"; then
@@ -174,10 +174,10 @@ fi
 for i in $(seq ${TONOS_CLI_SEND_ATTEMPTS}); do
     echo "INFO: tonos-cli submitTransaction attempt #${i}..."
     set -x
-    if ! "${UTILS_DIR}/tonos-cli" message --abi  "${CONFIGS_DIR}/SafeMultisigWallet.abi.json" \
-                              --sign "${KEYS_DIR}/msig.keys.json ${MSIG_ADDR}" submitTransaction \
-                                     "{\"dest\":\"${DEPOOL_ADDR}\",\"value\":\"1000000000\",\"bounce\":true,\"allBalance\":false,\"payload\":\"${VALIDATOR_QUERY_BOC}\"}" \
-                              --lifetime 3600 --raw --output "${TMP_DIR}/depool-query.boc"; then
+    if ! "${UTILS_DIR}/tonos-cli" message "${MSIG_ADDR}"  submitTransaction "{\"dest\":\"${DEPOOL_ADDR}\",\"value\":\"1000000000\",\"bounce\":true,\"allBalance\":false,\"payload\":\"${VALIDATOR_QUERY_BOC}\"}" \
+							 --abi  "${CONFIGS_DIR}/SafeMultisigWallet.abi.json" \
+                             --sign "${KEYS_DIR}/msig.keys.json" 
+                             --lifetime 3600 --raw --output "${TMP_DIR}/depool-query.boc"; then
         echo "INFO: tonos-cli create message attempt #${i}... FAIL"
     else
         if ! ${UTILS_DIR}/console -C ${CONFIGS_DIR}/console.json -c "sendmessage ${TMP_DIR}/depool-query.boc"; then
