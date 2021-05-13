@@ -174,10 +174,6 @@ fi
 for i in $(seq ${TONOS_CLI_SEND_ATTEMPTS}); do
     echo "INFO: tonos-cli submitTransaction attempt #${i}..."
     set -x
-
-    
-
-
     if ! "${UTILS_DIR}/tonos-cli" message --abi  "${CONFIGS_DIR}/SafeMultisigWallet.abi.json" \
                               --sign "${KEYS_DIR}/msig.keys.json ${MSIG_ADDR}" submitTransaction \
                                      "{\"dest\":\"${DEPOOL_ADDR}\",\"value\":\"1000000000\",\"bounce\":true,\"allBalance\":false,\"payload\":\"${VALIDATOR_QUERY_BOC}\"}" \
