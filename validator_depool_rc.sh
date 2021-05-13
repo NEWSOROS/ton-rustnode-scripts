@@ -100,19 +100,25 @@ if [ $ACTIVE_ELECTION_ID_TIME_DIFF -lt 1000 ]; then
         exit 1
     fi
 else
-    echo "INFO: ACTIVE_ELECTION_ID_FROM_DEPOOL_EVENT (${ACTIVE_ELECTION_ID_FROM_DEPOOL_EVENT}) does not match to ACTIVE_ELECTION_ID (${ACTIVE_ELECTION_ID})"
+  echo "INFO: ACTIVE_ELECTION_ID_FROM_DEPOOL_EVENT (${ACTIVE_ELECTION_ID_FROM_DEPOOL_EVENT}) does not match to ACTIVE_ELECTION_ID (${ACTIVE_ELECTION_ID})"
     if [ ! -z "${HELPER_ADDR}" ]; then
 	echo "INFO: try to ticktock"
         for i in $(seq ${TONOS_CLI_SEND_ATTEMPTS}); do
             echo "INFO: tonos-cli sendTicktock attempt #${i}..."
             set -x
-            if ! "${UTILS_DIR}/tonos-cli" depool --addr "${DEPOOL_ADDR}" ticktock \
-                -w "${HELPER_ADDR}" \
-                -s "${KEYS_DIR}/tiktok.json"; then
-                echo "INFO: tonos-cli submitTransaction attempt #${i}... FAIL"
+            if ! "${UTILS_DIR}/tonos-cli" message --abi  "${CONFIGS_DIR}/SafeMultisigWallet.abi.json" \
+                              --sign "${KEYS_DIR}/tiktok.json ${HELPER_ADDR}" sendTransaction \
+                                     "{\"dest\":\"${DEPOOL_ADDR}\",\"value\":1000000000,\"bounce\":true,\"flags\":3,\"payload\":\"te6ccgEBAQEABgAACCiAmCM=\"}" \
+                              --lifetime 3600 --raw --output "${TMP_DIR}/tiktok-query.boc"; then
+                echo "INFO: tonos-cli create message attempt #${i}... FAIL"
             else
-                echo "INFO: tonos-cli submitTransaction attempt #${i}... PASS"
-                break
+                if ! ${UTILS_DIR}/console -C ${CONFIGS_DIR}/console.json -c "sendmessage ${TMP_DIR}/tiktok-query.boc"; then
+                  echo "INFO: rust console send message attempt #${i}... FAIL"
+                else
+                  echo "INFO: rust console send message attempt #${i}... PASS"
+                  mv ${TMP_DIR}/tiktok-query.boc "${ELECTIONS_WORK_DIR}"
+                  break
+                fi
             fi
             set +x
         done
@@ -168,14 +174,23 @@ fi
 for i in $(seq ${TONOS_CLI_SEND_ATTEMPTS}); do
     echo "INFO: tonos-cli submitTransaction attempt #${i}..."
     set -x
-    if ! "${UTILS_DIR}/tonos-cli" call "${MSIG_ADDR}" submitTransaction \
-        "{\"dest\":\"${DEPOOL_ADDR}\",\"value\":\"1000000000\",\"bounce\":true,\"allBalance\":false,\"payload\":\"${VALIDATOR_QUERY_BOC}\"}" \
-        --abi "${CONFIGS_DIR}/SafeMultisigWallet.abi.json" \
-        --sign "${KEYS_DIR}/msig.keys.json"; then
-        echo "INFO: tonos-cli submitTransaction attempt #${i}... FAIL"
+
+    
+
+
+    if ! "${UTILS_DIR}/tonos-cli" message --abi  "${CONFIGS_DIR}/SafeMultisigWallet.abi.json" \
+                              --sign "${KEYS_DIR}/msig.keys.json ${MSIG_ADDR}" submitTransaction \
+                                     "{\"dest\":\"${DEPOOL_ADDR}\",\"value\":\"1000000000\",\"bounce\":true,\"allBalance\":false,\"payload\":\"${VALIDATOR_QUERY_BOC}\"}" \
+                              --lifetime 3600 --raw --output "${TMP_DIR}/depool-query.boc"; then
+        echo "INFO: tonos-cli create message attempt #${i}... FAIL"
     else
-        echo "INFO: tonos-cli submitTransaction attempt #${i}... PASS"
-        break
+        if ! ${UTILS_DIR}/console -C ${CONFIGS_DIR}/console.json -c "sendmessage ${TMP_DIR}/depool-query.boc"; then
+             echo "INFO: rust console send message attempt #${i}... FAIL"
+        else
+              echo "INFO: rust console send message attempt #${i}... PASS"
+              mv ${TMP_DIR}/depool-query.boc "${ELECTIONS_WORK_DIR}"
+              break
+        fi
     fi
     set +x
 done
