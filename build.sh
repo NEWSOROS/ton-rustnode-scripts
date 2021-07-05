@@ -15,6 +15,12 @@ TONOS_CLI_BUILD_DIR="${SRC_TOP_DIR}/build/tonos-cli"
 BIN_DIR="${SRC_TOP_DIR}/bin"
 TOOLS_DIR="${SRC_TOP_DIR}/tools"
 
+export RUSTFLAGS="-C target-cpu=native"
+RUST_VERSTION="1.51.0"
+export TZ=Europe/Moscow
+export PATH="/root/.cargo/bin:${PATH}"
+export RUST_BACKTRACE=1
+
 sudo apt update && sudo apt install -y \
     gpg \
     tar \
@@ -29,10 +35,20 @@ sudo apt update && sudo apt install -y \
     git \
     curl \
     gnupg2 \
-    librdkafka-dev
+    librdkafka-dev \
+	libzstd-dev
+ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+export ZSTD_LIB_DIR=/usr/lib/x86_64-linux-gnu
 
-cp $SCRIPT_DIR/rust_install.sh $TMP_DIR
-cd $TMP_DIR && sudo ./rust_install.sh 1.50.0
+if command -v rustc &> /dev/null ; then
+  INSTALLED_RUST_VERSION=$(rustc --version |awk '{print $2}')
+fi
+
+
+if [ "${INSTALLED_RUST_VERSION}" !=  "${RUST_VERSTION}" ]; then
+  cp $SCRIPT_DIR/rust_install.sh $TMP_DIR
+  cd $TMP_DIR && sudo ./rust_install.sh "${RUST_VERSTION}"
+fi
 
 rm -rf "${NODE_BUILD_DIR}"
 
@@ -46,7 +62,7 @@ cd "${NODE_BUILD_DIR}" && git clone --recursive "${TON_NODE_GITHUB_REPO}" ton-no
 cd "${NODE_BUILD_DIR}/ton-node" && git checkout "${TON_NODE_GITHUB_COMMIT_ID}"
 sed -i "s@log = \"0.4\"@log = { version = \"0.4\", features = [\"release_max_level_off\"] }@g" "${NODE_BUILD_DIR}/ton-node/Cargo.toml"
 cargo update
-cargo build --release
+cargo build --release  --features "compression"
 
 if [ -f "${NODE_BUILD_DIR}/ton-node/target/release/ton_node" ]; then
     mv "${BIN_DIR}/ton_node" "${TMP_DIR}/" &> /dev/null || true
